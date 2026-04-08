@@ -1,0 +1,75 @@
+name: codereview-env
+version: "2.0.0"
+description: >
+  A real-world OpenEnv RL environment for training LLM agents to write
+  high-quality, actionable code reviews. Agents learn to inspect PR diffs,
+  request more context, and submit structured findings across three
+  difficulty tiers (easy → medium → hard).
+author: "your-huggingface-username"
+tags:
+  - code-review
+  - software-engineering
+  - reinforcement-learning
+  - llm-evaluation
+  - openenv
+  - security
+  - hackathon-2026
+
+# ── OpenEnv spec compliance ────────────────────────────────────────────────
+environment_class: server.environment.CodeReviewEnvironment
+action_class: server.environment.CodeReviewAction
+observation_class: server.environment.CodeReviewObservation
+
+# ── Task registry ──────────────────────────────────────────────────────────
+tasks:
+  - id: pagination-regression
+    difficulty: easy
+    title: "Review a pagination bug fix before release"
+    description: >
+      A pagination helper was edited after customer reports that page 2 skips results.
+      Identify whether the fix is correct AND whether any remaining production risk exists
+      (page 0 / negative pages create dangerous negative-index slices).
+    step_limit: 4
+    reward_range: [0.0, 1.0]
+
+  - id: tenant-export-auth
+    difficulty: medium
+    title: "Review a multi-tenant export endpoint"
+    description: >
+      A finance CSV-export endpoint was added for admins in a multi-tenant SaaS system.
+      The route reads account_id from query params without scope validation — a cross-tenant
+      data leak and missing admin-role gate must be caught.
+    step_limit: 5
+    reward_range: [0.0, 1.0]
+
+  - id: refund-idempotency
+    difficulty: hard
+    title: "Review a refund worker retry patch"
+    description: >
+      A refund worker was patched after a duplicate-refund incident. The patch retries
+      without an idempotency key, and concurrent workers can both send the refund due to
+      a status-update race. A missing regression test leaves the risk uncovered.
+    step_limit: 6
+    reward_range: [0.0, 1.0]
+
+# ── Episode parameters ─────────────────────────────────────────────────────
+episode:
+  type: multi-step
+  max_steps: 7
+  action_types:
+    - open_artifact   # Explore additional context (partial reward)
+    - submit_review   # Submit findings (graded; ends episode)
+
+# ── Reward function ────────────────────────────────────────────────────────
+reward:
+  range: [0.0, 1.0]
+  layers:
+    - name: exploration_bonus
+      description: "+0.05 per unique artifact opened before submitting"
+      max: 0.35
+    - name: task_grader
+      description: "Deterministic keyword + quality grader (70% weight)"
+      max: 0.70
+    - name: llm_reward
+      description: "Two-layer LLM judge — programmatic (0.40) + semantic (0.60), 30% weight"
+      max: 0.30

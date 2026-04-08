@@ -1,0 +1,50 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\HP\Downloads\Projects\Meta\codereview_env
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+tests/test_client.py::test_client_connects_to_server PASSED              [  3%]
+tests/test_client.py::test_client_reset_returns_observation PASSED       [  7%]
+tests/test_client.py::test_client_step_returns_result PASSED             [ 11%]
+tests/test_client.py::test_sync_wrapper_works PASSED                     [ 15%]
+tests/test_client.py::test_run_episode_convenience PASSED                [ 19%]
+tests/test_environment.py::test_reset_returns_observation PASSED         [ 23%]
+tests/test_environment.py::test_reset_gives_nonempty_diff PASSED         [ 26%]
+tests/test_environment.py::test_step_returns_float_reward PASSED         [ 30%]
+tests/test_environment.py::test_step_reward_in_valid_range PASSED        [ 34%]
+tests/test_environment.py::test_episode_done_after_step PASSED           [ 38%]
+tests/test_environment.py::test_state_after_reset PASSED                 [ 42%]
+tests/test_environment.py::test_state_after_step PASSED                  [ 46%]
+tests/test_environment.py::test_environment_works_without_hf_dataset PASSED [ 50%]
+tests/test_models.py::test_action_valid_creation PASSED                  [ 53%]
+tests/test_models.py::test_action_defaults PASSED                        [ 57%]
+tests/test_models.py::test_action_rejects_empty_review PASSED            [ 61%]
+tests/test_models.py::test_observation_valid_creation PASSED             [ 65%]
+tests/test_models.py::test_observation_episode_done_default PASSED       [ 69%]
+tests/test_reward.py::test_empty_review_low_reward FAILED                [ 73%]
+tests/test_reward.py::test_lgtm_review_very_low PASSED                   [ 76%]
+tests/test_reward.py::test_detailed_review_higher PASSED                 [ 80%]
+tests/test_reward.py::test_reward_always_float PASSED                    [ 84%]
+tests/test_reward.py::test_reward_range PASSED                           [ 88%]
+tests/test_reward.py::test_reward_breakdown_keys PASSED                  [ 92%]
+tests/test_reward.py::test_layer1_programmatic_checks PASSED             [ 96%]
+tests/test_reward.py::test_llm_judge_fallback PASSED                     [100%]
+
+================================== FAILURES ===================================
+________________________ test_empty_review_low_reward _________________________
+tests\test_reward.py:16: in test_empty_review_low_reward
+    assert rew < 0.15
+E   assert 0.2 < 0.15
+============================== warnings summary ===============================
+codereview_env\models.py:16
+  C:\Users\HP\Downloads\Projects\Meta\codereview_env\codereview_env\models.py:16: DeprecationWarning: openenv_core is deprecated; import from openenv.core instead.
+    from openenv_core.models import Action, Observation
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_reward.py::test_empty_review_low_reward - assert 0.2 < 0.15
+=================== 1 failed, 25 passed, 1 warning in 4.71s ===================

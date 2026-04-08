@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeReview-Env</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__eyebrow">Meta x PyTorch x Hugging Face Hackathon</div>
+    <div class="hero__row">
+      <div>
+        <h1>CodeReview-Env</h1>
+        <p class="hero__copy">A live benchmark for reviewing realistic pull requests across easy, medium, and hard software engineering tasks.</p>
+      </div>
+      <div class="status-card">
+        <div class="status-card__label">Environment</div>
+        <div class="status-card__value"><span id="status-dot" class="status-dot"></span><span id="status-text">Checking</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel panel--diff">
+      <div class="panel__header">
+        <div>
+          <div class="panel__kicker">Episode</div>
+          <h2 id="task-title">Loading task...</h2>
+        </div>
+        <button id="btn-load-new" class="btn btn--secondary">Load New Task</button>
+      </div>
+      <div class="meta-row">
+        <span class="pill" id="task-id">task-id</span>
+        <span class="pill" id="task-difficulty">difficulty</span>
+        <span class="pill" id="task-step-limit">0 steps</span>
+      </div>
+      <p class="summary" id="task-summary">Preparing environment...</p>
+      <div class="artifact-list" id="artifact-list"></div>
+      <div class="diff-box">
+        <pre id="artifact-content">Select or open an artifact to inspect the code or evidence.</pre>
+      </div>
+    </section>
+
+    <section class="panel panel--review">
+      <div class="panel__header">
+        <div>
+          <div class="panel__kicker">Review</div>
+          <h2>Submit Findings</h2>
+        </div>
+      </div>
+      <label class="field">
+        <span>Title</span>
+        <input id="finding-title" type="text" placeholder="Missing tenant scope on export route">
+      </label>
+      <div class="field-grid">
+        <label class="field">
+          <span>File Path</span>
+          <input id="finding-file" type="text" placeholder="api/admin_exports.py">
+        </label>
+        <label class="field">
+          <span>Severity</span>
+          <select id="finding-severity">
+            <option value="low">low</option>
+            <option value="medium" selected>medium</option>
+            <option value="high">high</option>
+            <option value="critical">critical</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">
+        <span>Line Hint</span>
+        <input id="finding-line" type="text" placeholder="export_invoices">
+      </label>
+      <label class="field">
+        <span>Rationale</span>
+        <textarea id="finding-rationale" rows="7" placeholder="Explain the production impact and why this is a real bug."></textarea>
+      </label>
+      <label class="field">
+        <span>Recommendation</span>
+        <textarea id="finding-recommendation" rows="5" placeholder="Give a concrete fix the author can apply."></textarea>
+      </label>
+      <div class="button-row">
+        <button class="btn btn--ghost" data-preset="pagination">Easy Preset</button>
+        <button class="btn btn--ghost" data-preset="auth">Medium Preset</button>
+        <button class="btn btn--ghost" data-preset="refund">Hard Preset</button>
+      </div>
+      <button id="btn-submit" class="btn btn--primary">Submit Review</button>
+    </section>
+
+    <section class="panel panel--results">
+      <div class="panel__header">
+        <div>
+          <div class="panel__kicker">Results</div>
+          <h2>Reward Breakdown</h2>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-card__label">Reward</div>
+        <div id="reward-value" class="score-card__value">0.00</div>
+      </div>
+      <div class="score-grid">
+        <div class="metric">
+          <span>Score</span>
+          <strong id="score-value">0.00</strong>
+        </div>
+        <div class="metric">
+          <span>Steps</span>
+          <strong id="steps-value">0</strong>
+        </div>
+        <div class="metric">
+          <span>Status</span>
+          <strong id="done-value">Active</strong>
+        </div>
+      </div>
+      <div>
+        <h3>Recent Events</h3>
+        <ul id="events-list" class="simple-list"></ul>
+      </div>
+      <div>
+        <h3>Matched Criteria</h3>
+        <ul id="criteria-list" class="simple-list"></ul>
+      </div>
+      <div>
+        <h3>Reward Components</h3>
+        <ul id="components-list" class="simple-list"></ul>
+      </div>
+      <div>
+        <h3>API Shortcuts</h3>
+        <div class="shortcut-links">
+          <a href="/docs" target="_blank" rel="noreferrer">Docs</a>
+          <a href="/health" target="_blank" rel="noreferrer">Health</a>
+          <a href="/tasks" target="_blank" rel="noreferrer">Tasks</a>
+          <a href="/demo" target="_blank" rel="noreferrer">Demo</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
