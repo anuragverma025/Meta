@@ -113,7 +113,7 @@ def grade_findings(
             {
                 "criterion_id": criterion.criterion_id,
                 "description": criterion.description,
-                "score": round(best, 4),
+                "score": round(_clamp_score(best), 4),
                 "weight": criterion.weight,
             }
         )
@@ -547,7 +547,7 @@ def grade_submission(
     Deterministic grader shim — bridges raw text / dict findings to grade_findings().
 
     Returns a dict with at minimum: {"score": float, "task_id": str, "difficulty": str}
-    Score is always in [0.0, 1.0].
+    Score is always in (0.05, 0.95).
     """
     if task_id not in TASKS_BY_ID:
         raise ValueError(f"Unknown task '{task_id}'.")
