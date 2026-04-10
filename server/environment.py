@@ -14,11 +14,11 @@ from codereview_env.models import (
 from server.reward import RewardBreakdown, RewardComputer
 from server.tasks import TASKS, TASKS_BY_ID, ReviewTask
 
-_SCORE_EPS = 1e-6
+_SCORE_EPS = 0.01
 
 
 def _clamp_score(raw: float) -> float:
-    """Keep validator-visible scores strictly inside the open unit interval."""
+    """Keep validator-visible scores strictly inside the limit unit interval ([0.01, 0.99])."""
     return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
 
 

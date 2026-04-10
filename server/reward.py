@@ -6,11 +6,11 @@ from typing import Dict, List, Sequence, Set
 from codereview_env.models import ReviewFinding
 from server.tasks import ReviewTask, grade_findings
 
-_SCORE_EPS = 1e-6
+_SCORE_EPS = 0.01
 
 
 def _clamp_score(raw: float) -> float:
-    """Ensure externally visible scores stay strictly within (0, 1)."""
+    """Ensure externally visible scores stay strictly within [0.01, 0.99]."""
     return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
 
 
