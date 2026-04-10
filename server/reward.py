@@ -6,12 +6,13 @@ from typing import Dict, List, Sequence, Set
 from codereview_env.models import ReviewFinding
 from server.tasks import ReviewTask, grade_findings
 
-_SCORE_EPS = 0.01
+_MIN_PUBLIC_SCORE = 0.05
+_MAX_PUBLIC_SCORE = 0.95
 
 
 def _clamp_score(raw: float) -> float:
-    """Ensure externally visible scores stay strictly within [0.01, 0.99]."""
-    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
+    """Ensure externally visible scores stay strictly within a safe subrange."""
+    return max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, raw))
 
 
 @dataclass
@@ -33,24 +34,24 @@ class RewardComputer:
     ) -> RewardBreakdown:
         if repeated:
             return RewardBreakdown(
-                reward=_SCORE_EPS,
-                score=_SCORE_EPS,
+                reward=_MIN_PUBLIC_SCORE,
+                score=_MIN_PUBLIC_SCORE,
                 components={"artifact_progress": 0.0, "loop_penalty": -0.03},
                 grader_details=[],
             )
         artifact = task.artifacts[artifact_id]
-        reward = _clamp_score(max(0.0, min(0.2, artifact.reward)))
+        reward = _clamp_score(artifact.reward)
         return RewardBreakdown(
             reward=reward,
-            score=_SCORE_EPS,
+            score=_MIN_PUBLIC_SCORE,
             components={"artifact_progress": reward, "loop_penalty": 0.0},
             grader_details=[],
         )
 
     def invalid_action(self, message: str) -> RewardBreakdown:
         return RewardBreakdown(
-            reward=_SCORE_EPS,
-            score=_SCORE_EPS,
+            reward=_MIN_PUBLIC_SCORE,
+            score=_MIN_PUBLIC_SCORE,
             components={"invalid_action_penalty": -0.08},
             grader_details=[],
             last_action_error=message,

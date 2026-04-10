@@ -16,8 +16,8 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 BENCHMARK = "codereview-env"
 MAX_STEPS = 6
 SUCCESS_SCORE_THRESHOLD = 0.60
-_SCORE_EPS = 1e-6
-_PRINT_SCORE_FLOOR = 0.01
+_MIN_PUBLIC_SCORE = 0.05
+_MAX_PUBLIC_SCORE = 0.95
 
 
 SYSTEM_PROMPT = """You are reviewing a pull request in a deterministic benchmark.
@@ -184,7 +184,7 @@ def _print_step(
     """Emit the required step output line immediately after env.step()."""
     error_value = observation.last_action_error or "null"
     raw_reward = float(observation.reward or 0.0)
-    safe_reward = max(_PRINT_SCORE_FLOOR, min(1.0 - _PRINT_SCORE_FLOOR, raw_reward))
+    safe_reward = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, raw_reward))
     print(
         f"[STEP] step={step_number} action={_format_action(_action_output_payload(action))} "
         f"reward={safe_reward:.2f} "
@@ -218,7 +218,7 @@ def _run_task(task_id: str, client: OpenAI) -> None:
     finally:
         env.close()
         rewards_str = ",".join(
-            f"{max(_PRINT_SCORE_FLOOR, min(1.0 - _PRINT_SCORE_FLOOR, reward)):.2f}"
+            f"{max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, reward)):.2f}"
             for reward in rewards
         )
         print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")

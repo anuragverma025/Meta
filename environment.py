@@ -14,12 +14,13 @@ from codereview_env.models import (
 from server.reward import RewardBreakdown, RewardComputer
 from server.tasks import TASKS, TASKS_BY_ID, ReviewTask
 
-_SCORE_EPS = 1e-6
+_MIN_PUBLIC_SCORE = 0.05
+_MAX_PUBLIC_SCORE = 0.95
 
 
 def _clamp_score(raw: float) -> float:
-    """Keep validator-visible scores strictly inside the open unit interval."""
-    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
+    """Keep validator-visible scores inside a conservative open interval."""
+    return max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, raw))
 
 
 class CodeReviewEnvironment(
@@ -73,11 +74,11 @@ class CodeReviewEnvironment(
         self._opened_artifact_ids = set(task.starting_artifacts)
         self._submitted_findings = []
         self._recent_events = ["Episode reset."]
-        self._cumulative_reward = _SCORE_EPS
-        self._score = _SCORE_EPS
+        self._cumulative_reward = _MIN_PUBLIC_SCORE
+        self._score = _MIN_PUBLIC_SCORE
         self._last_action_error = None
         self._episode_done = False
-        return self._build_observation(reward=_SCORE_EPS, done=False)
+        return self._build_observation(reward=_MIN_PUBLIC_SCORE, done=False)
 
     def step(
         self, action: CodeReviewAction, timeout_s: Optional[float] = None, **kwargs: Any
@@ -86,7 +87,7 @@ class CodeReviewEnvironment(
             raise RuntimeError("reset() must be called before step().")
         if self._episode_done:
             self._last_action_error = "Episode already finished."
-            return self._build_observation(reward=_SCORE_EPS, done=True)
+            return self._build_observation(reward=_MIN_PUBLIC_SCORE, done=True)
 
         self.step_count += 1
         reward_breakdown: RewardBreakdown
