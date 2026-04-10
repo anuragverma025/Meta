@@ -196,7 +196,7 @@ def _run_task(task_id: str, client: OpenAI) -> None:
     """Run one benchmark episode and emit only the required line types."""
     env = CodeReviewEnvironment()
     rewards: list[float] = []
-    score = 0.0
+    score = _MIN_PUBLIC_SCORE
     steps = 0
     success = False
     print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}")
@@ -209,17 +209,20 @@ def _run_task(task_id: str, client: OpenAI) -> None:
             action = CodeReviewAction.model_validate(action_payload)
             observation = env.step(action)
             steps += 1
-            rewards.append(float(observation.reward or 0.0))
-            score = float(observation.score)
+            step_reward = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, float(observation.reward or _MIN_PUBLIC_SCORE)))
+            rewards.append(step_reward)
+            score = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, float(observation.score or _MIN_PUBLIC_SCORE)))
             _print_step(steps, action, observation)
         success = bool(observation.done and score >= SUCCESS_SCORE_THRESHOLD)
     except Exception:
         success = False
     finally:
         env.close()
+        # Ensure at least one reward value so rewards= is never empty
+        safe_rewards = rewards if rewards else [_MIN_PUBLIC_SCORE]
         rewards_str = ",".join(
-            f"{max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, reward)):.2f}"
-            for reward in rewards
+            f"{max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, r)):.2f}"
+            for r in safe_rewards
         )
         print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")
 

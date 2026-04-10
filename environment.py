@@ -175,7 +175,7 @@ class CodeReviewEnvironment(
             self.step_count,
             self._step_limit,
         )
-        self._score = breakdown.score
+        self._score = _clamp_score(breakdown.score)
         self._recent_events.append(f"Submitted {len(action.findings)} findings.")
         return breakdown
 
