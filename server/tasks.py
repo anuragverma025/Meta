@@ -177,7 +177,7 @@ TASKS: List[ReviewTask] = [
                 description="Reviewer flags that page 0 or negative pages still slice from the end and need validation.",
                 file_path="utils/pagination.py",
                 severity="medium",
-                weight=0.65,
+                weight=0.60,
                 required_terms=(
                     {
                         "page 0",
@@ -279,7 +279,7 @@ TASKS: List[ReviewTask] = [
                 description="Reviewer catches missing tenant scoping on account_id, creating a cross-tenant data leak.",
                 file_path="api/admin_exports.py",
                 severity="critical",
-                weight=0.7,
+                weight=0.65,
                 required_terms=(
                     {
                         "cross-tenant",
@@ -305,7 +305,7 @@ TASKS: List[ReviewTask] = [
                 description="Reviewer notes that the route never calls require_admin, so any authenticated user could hit it if routed.",
                 file_path="api/admin_exports.py",
                 severity="high",
-                weight=0.3,
+                weight=0.30,
                 required_terms=(
                     {"require_admin", "admin role", "admin gate", "privilege"},
                     {"missing", "not called", "no check", "unguarded"},
@@ -411,7 +411,7 @@ TASKS: List[ReviewTask] = [
                 description="Reviewer flags that the retry calls refund twice without a durable idempotency key.",
                 file_path="workers/refunds.py",
                 severity="critical",
-                weight=0.5,
+                weight=0.50,
                 required_terms=(
                     {
                         "idempotency",
@@ -437,7 +437,7 @@ TASKS: List[ReviewTask] = [
                 description="Reviewer notes that status is updated only after the processor call, so concurrent workers can both send the refund.",
                 file_path="workers/refunds.py",
                 severity="high",
-                weight=0.35,
+                weight=0.30,
                 required_terms=(
                     {
                         "concurrent",
