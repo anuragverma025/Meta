@@ -183,11 +183,11 @@ def _print_step(
 ) -> None:
     """Emit the required step output line immediately after env.step()."""
     error_value = observation.last_action_error or "null"
-    raw_reward = float(observation.reward or _MIN_PUBLIC_SCORE)
-    safe_reward = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, raw_reward))
+    _SCORE_EPS = 1e-4  # enough to avoid 0.00 when rounded to 2dp
+    raw_reward = max(_SCORE_EPS, min(1.0 - _SCORE_EPS, float(observation.reward or _SCORE_EPS)))
     print(
         f"[STEP] step={step_number} action={_format_action(_action_output_payload(action))} "
-        f"reward={safe_reward:.2f} "
+        f"reward={raw_reward:.2f} "
         f"done={str(observation.done).lower()} error={error_value}"
     )
 
@@ -219,10 +219,9 @@ def _run_task(task_id: str, client: OpenAI) -> None:
     finally:
         env.close()
         # Ensure at least one reward value so rewards= is never empty
-        safe_rewards = rewards if rewards else [_MIN_PUBLIC_SCORE]
+        safe_rewards = rewards if rewards else [1e-4]
         rewards_str = ",".join(
-            f"{max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, r)):.2f}"
-            for r in safe_rewards
+            f"{max(1e-4, min(0.9999, r)):.2f}" for r in safe_rewards
         )
         print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")
 

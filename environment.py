@@ -112,9 +112,7 @@ class CodeReviewEnvironment(
 
         self._episode_done = done
         self._last_action_error = reward_breakdown.last_action_error
-        self._cumulative_reward = _clamp_score(
-            self._cumulative_reward + reward_breakdown.reward
-        )
+        self._cumulative_reward = max(0.05, min(0.95, self._cumulative_reward + reward_breakdown.reward))
         self._recent_events.append(
             f"Step {self.step_count}: {action.action_type} -> reward {reward_breakdown.reward:.2f}"
         )
