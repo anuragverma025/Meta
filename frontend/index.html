@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CodeReview-Env</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
   <header class="hero">
@@ -28,7 +28,14 @@
           <div class="panel__kicker">Episode</div>
           <h2 id="task-title">Loading task...</h2>
         </div>
-        <button id="btn-load-new" class="btn btn--secondary">Load New Task</button>
+        <div style="display: flex; gap: 8px;">
+          <select id="task-selector" class="btn btn--secondary" style="font-size: 13px;">
+            <option value="pagination-regression">Easy: Pagination Bug</option>
+            <option value="tenant-export-auth">Medium: Security Audit</option>
+            <option value="refund-idempotency">Hard: Async Race</option>
+          </select>
+          <button id="btn-load-new" class="btn btn--secondary">Load Task</button>
+        </div>
       </div>
       <div class="meta-row">
         <span class="pill" id="task-id">task-id</span>
@@ -137,6 +144,6 @@
     </section>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="static/app.js"></script>
 </body>
 </html>

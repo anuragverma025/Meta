@@ -1,4 +1,4 @@
-﻿const API_BASE = "";
+const API_BASE = "";
 
 let sessionId = null;
 let currentObservation = null;
@@ -6,6 +6,7 @@ let selectedArtifactId = null;
 
 const presets = {
   pagination: {
+    task_id: "pagination-regression",
     title: "Still missing page validation",
     file: "utils/pagination.py",
     severity: "medium",
@@ -14,6 +15,7 @@ const presets = {
     recommendation: "Validate page >= 1 before computing slice boundaries and raise ValueError for invalid page numbers.",
   },
   auth: {
+    task_id: "tenant-export-auth",
     title: "Export route is missing authz guards",
     file: "api/admin_exports.py",
     severity: "critical",
@@ -22,6 +24,7 @@ const presets = {
     recommendation: "Call require_admin and require_account_scope before reading account_id or invoking invoice_repo.export_csv.",
   },
   refund: {
+    task_id: "refund-idempotency",
     title: "Retry path can send duplicate refunds",
     file: "workers/refunds.py",
     severity: "critical",
@@ -59,16 +62,25 @@ async function checkHealth() {
   }
 }
 
-async function loadEpisode() {
+async function loadEpisode(overrideTaskId = null) {
   try {
-    const response = await fetch(`${API_BASE}/reset`, { method: "POST" });
+    let taskId = overrideTaskId;
+    if (!taskId) {
+       const selector = document.getElementById("task-selector");
+       if (selector) taskId = selector.value;
+    }
+    const response = await fetch(`${API_BASE}/reset`, { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(taskId ? { task_id: taskId } : {})
+    });
     const data = await response.json();
     sessionId = data.session_id;
     currentObservation = data.observation;
     selectedArtifactId = currentObservation.opened_artifacts[0]?.artifact_id || currentObservation.available_artifacts[0]?.artifact_id || null;
     renderObservation(currentObservation);
     resetResultPanels();
-    autoFillFromObservation();
+    clearForm();
   } catch (error) {
     document.getElementById("task-title").textContent = "Failed to load task";
     document.getElementById("task-summary").textContent = "The backend did not respond to /reset.";
@@ -198,11 +210,18 @@ function buildFinding() {
   };
 }
 
-function applyPreset(name) {
+async function applyPreset(name) {
   const preset = presets[name];
   if (!preset) {
     return;
   }
+  
+  if (!currentObservation || currentObservation.task_id !== preset.task_id) {
+    const selector = document.getElementById("task-selector");
+    if (selector) selector.value = preset.task_id;
+    await loadEpisode(preset.task_id);
+  }
+
   document.getElementById("finding-title").value = preset.title;
   document.getElementById("finding-file").value = preset.file;
   document.getElementById("finding-severity").value = preset.severity;
@@ -211,14 +230,13 @@ function applyPreset(name) {
   document.getElementById("finding-recommendation").value = preset.recommendation;
 }
 
-function autoFillFromObservation() {
-  if (!currentObservation) {
-    return;
-  }
-  const difficulty = currentObservation.difficulty;
-  if (difficulty === "easy") applyPreset("pagination");
-  if (difficulty === "medium") applyPreset("auth");
-  if (difficulty === "hard") applyPreset("refund");
+function clearForm() {
+  document.getElementById("finding-title").value = "";
+  document.getElementById("finding-file").value = "";
+  document.getElementById("finding-severity").value = "medium";
+  document.getElementById("finding-line").value = "";
+  document.getElementById("finding-rationale").value = "";
+  document.getElementById("finding-recommendation").value = "";
 }
 
 function updateReward(reward, score, done) {

@@ -7,6 +7,8 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import os
+from typing import Any
 import uvicorn
 
 from codereview_env.models import CodeReviewAction, CodeReviewObservation, CodeReviewState
@@ -22,9 +24,20 @@ app = FastAPI(title="CodeReview-Env", version="2.0.0")
 _sessions: dict[str, CodeReviewEnvironment] = {}
 _latest_session_id: str | None = None
 _session_lock = Lock()
-_frontend_dir = Path(__file__).resolve().parents[1] / "frontend"
+_current_dir = Path(__file__).resolve().parent
+_root_dir = _current_dir.parent
 
-app.mount("/static", StaticFiles(directory=_frontend_dir), name="static")
+# Robust path resolution for frontend
+_frontend_dir = (_root_dir / "frontend").resolve()
+if not _frontend_dir.exists():
+    # Attempt to find it relative to current working directory
+    _frontend_dir = (Path.cwd() / "frontend").resolve()
+
+if not _frontend_dir.exists():
+    # Fallback for container structured where source might be in /app
+    _frontend_dir = Path("/app/frontend").resolve()
+
+app.mount("/static", StaticFiles(directory=str(_frontend_dir)), name="static")
 
 
 def _serialize_step(observation: CodeReviewObservation, session_id: str) -> dict:
@@ -43,9 +56,29 @@ def _resolve_session(session_id: str | None) -> tuple[str, CodeReviewEnvironment
     return selected_session_id, _sessions[selected_session_id]
 
 
-@app.get("/", include_in_schema=False)
-def root() -> FileResponse:
-    return FileResponse(_frontend_dir / "index.html")
+@app.get("/", include_in_schema=False, response_model=None)
+@app.get("/index.html", include_in_schema=False, response_model=None)
+@app.get("/ui", include_in_schema=False, response_model=None)
+def root(request: Request) -> Any:
+    index_path = _frontend_dir / "index.html"
+    
+    # Debug info for logs
+    print(f"DEBUG: Root request for {request.url.path}")
+    print(f"DEBUG: Looking for index.html at {index_path}")
+    
+    if not index_path.exists():
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "error": "Dashboard files missing",
+                "searched_at": str(index_path),
+                "cwd": os.getcwd(),
+                "frontend_dir_exists": _frontend_dir.exists(),
+                "frontend_dir": str(_frontend_dir),
+                "files_in_frontend": os.listdir(str(_frontend_dir)) if _frontend_dir.exists() else []
+            }
+        )
+    return FileResponse(index_path)
 
 
 @app.get("/health", tags=["Health"])
