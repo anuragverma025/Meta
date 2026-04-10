@@ -65,10 +65,10 @@ class CodeReviewObservation(Observation):
     available_artifacts: List[ReviewArtifact] = Field(default_factory=list)
     recent_events: List[str] = Field(default_factory=list)
     last_action_error: Optional[str] = None
-    score: float = Field(default=0.0, ge=0.0, le=1.0)
+    score: float = Field(default=0.05, gt=0.0, lt=1.0)
     # Step-level signals (populated by environment)
     done: bool = Field(default=False, description="Whether the episode has ended.")
-    reward: float = Field(default=0.0, description="Reward earned on this step.")
+    reward: float = Field(default=0.05, description="Reward earned on this step.")
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Extra per-step metadata."
     )
@@ -82,7 +82,7 @@ class CodeReviewState(State):
     step_count: int = 0
     opened_artifact_ids: List[str] = Field(default_factory=list)
     submitted_findings: List[ReviewFinding] = Field(default_factory=list)
-    cumulative_reward: float = Field(default=0.0, ge=0.0, le=1.0)
-    score: float = Field(default=0.0, ge=0.0, le=1.0)
+    cumulative_reward: float = Field(default=0.05, gt=0.0, lt=1.0)
+    score: float = Field(default=0.05, gt=0.0, lt=1.0)
     last_action_error: Optional[str] = None
     task_metadata: Dict[str, Any] = Field(default_factory=dict)

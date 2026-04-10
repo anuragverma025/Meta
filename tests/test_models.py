@@ -47,7 +47,7 @@ def test_observation_has_openenv_fields() -> None:
         summary="Short summary",
         step_limit=4,
         done=False,
-        reward=0.0,
+        reward=0.05,
     )
     assert observation.done is False
-    assert observation.reward == 0.0
+    assert observation.reward == 0.05

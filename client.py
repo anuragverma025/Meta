@@ -79,7 +79,7 @@ class CodeReviewEnv:
             opened_artifact_ids=list(
                 self._last_observation.metadata.get("opened_artifact_ids", [])
             ),
-            cumulative_reward=0.0,
+            cumulative_reward=0.05,
             score=self._last_observation.score,
             last_action_error=self._last_observation.last_action_error,
             task_metadata={"source": "client-cache"},

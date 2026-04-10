@@ -35,8 +35,8 @@ class CodeReviewEnvironment(
         self._opened_artifact_ids: Set[str] = set()
         self._submitted_findings: List[ReviewFinding] = []
         self._recent_events: List[str] = []
-        self._cumulative_reward = 0.0
-        self._score = 0.0
+        self._cumulative_reward = _MIN_PUBLIC_SCORE
+        self._score = _MIN_PUBLIC_SCORE
         self._last_action_error: Optional[str] = None
         self._step_limit = 0
         self._task_index = 0

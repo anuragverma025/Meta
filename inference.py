@@ -183,7 +183,7 @@ def _print_step(
 ) -> None:
     """Emit the required step output line immediately after env.step()."""
     error_value = observation.last_action_error or "null"
-    raw_reward = float(observation.reward or 0.0)
+    raw_reward = float(observation.reward or _MIN_PUBLIC_SCORE)
     safe_reward = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, raw_reward))
     print(
         f"[STEP] step={step_number} action={_format_action(_action_output_payload(action))} "

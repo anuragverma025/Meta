@@ -12,8 +12,8 @@ class PaginationConfig(BaseModel):
 
 
 class RewardConfig(BaseModel):
-    MIN_REWARD: float = 0.0
-    MAX_REWARD: float = 1.0
+    MIN_REWARD: float = 0.05
+    MAX_REWARD: float = 0.95
     DECIMAL_PRECISION: int = 4
     BONUS_COEFFICIENT: float = 0.75
 
