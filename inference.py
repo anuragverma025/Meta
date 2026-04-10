@@ -18,6 +18,7 @@ MAX_STEPS = 6
 SUCCESS_SCORE_THRESHOLD = 0.60
 _MIN_PUBLIC_SCORE = 0.05
 _MAX_PUBLIC_SCORE = 0.95
+_SCORE_EPS = 1e-4
 
 
 SYSTEM_PROMPT = """You are reviewing a pull request in a deterministic benchmark.
@@ -183,11 +184,9 @@ def _print_step(
 ) -> None:
     """Emit the required step output line immediately after env.step()."""
     error_value = observation.last_action_error or "null"
-    _SCORE_EPS = 1e-4  # enough to avoid 0.00 when rounded to 2dp
-    raw_reward = max(_SCORE_EPS, min(1.0 - _SCORE_EPS, float(observation.reward or _SCORE_EPS)))
     print(
         f"[STEP] step={step_number} action={_format_action(_action_output_payload(action))} "
-        f"reward={raw_reward:.2f} "
+        f"reward={max(_SCORE_EPS, min(1.0 - _SCORE_EPS, float(observation.reward or _SCORE_EPS))):.4f} "
         f"done={str(observation.done).lower()} error={error_value}"
     )
 
@@ -196,7 +195,7 @@ def _run_task(task_id: str, client: OpenAI) -> None:
     """Run one benchmark episode and emit only the required line types."""
     env = CodeReviewEnvironment()
     rewards: list[float] = []
-    score = _MIN_PUBLIC_SCORE
+    score = _SCORE_EPS
     steps = 0
     success = False
     print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}")
@@ -209,8 +208,7 @@ def _run_task(task_id: str, client: OpenAI) -> None:
             action = CodeReviewAction.model_validate(action_payload)
             observation = env.step(action)
             steps += 1
-            step_reward = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, float(observation.reward or _MIN_PUBLIC_SCORE)))
-            rewards.append(step_reward)
+            rewards.append(max(_SCORE_EPS, min(1.0 - _SCORE_EPS, float(observation.reward or _SCORE_EPS))))
             score = max(_MIN_PUBLIC_SCORE, min(_MAX_PUBLIC_SCORE, float(observation.score or _MIN_PUBLIC_SCORE)))
             _print_step(steps, action, observation)
         success = bool(observation.done and score >= SUCCESS_SCORE_THRESHOLD)

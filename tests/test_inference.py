@@ -49,7 +49,7 @@ def test_run_task_emits_required_stdout_format(
         lines[0],
     )
     assert re.fullmatch(
-        r'\[STEP\] step=1 action=\{"action_type":"open_artifact","artifact_id":"test_log","note":"Need the failing test\."\} reward=\d+\.\d{2} done=false error=null',
+        r'\[STEP\] step=1 action=\{"action_type":"open_artifact","artifact_id":"test_log","note":"Need the failing test\."\} reward=\d+\.\d{4} done=false error=null',
         lines[1],
     )
     assert re.fullmatch(
