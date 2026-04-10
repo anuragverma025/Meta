@@ -5,7 +5,7 @@ description: >
   high-quality, actionable code reviews. Agents learn to inspect PR diffs,
   request more context, and submit structured findings across three
   difficulty tiers (easy → medium → hard).
-author: "your-huggingface-username"
+author: "Anurag137"
 tags:
   - code-review
   - software-engineering
@@ -30,7 +30,7 @@ tasks:
       Identify whether the fix is correct AND whether any remaining production risk exists
       (page 0 / negative pages create dangerous negative-index slices).
     step_limit: 4
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
 
   - id: tenant-export-auth
     difficulty: medium
@@ -40,7 +40,7 @@ tasks:
       The route reads account_id from query params without scope validation — a cross-tenant
       data leak and missing admin-role gate must be caught.
     step_limit: 5
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
 
   - id: refund-idempotency
     difficulty: hard
@@ -50,7 +50,7 @@ tasks:
       without an idempotency key, and concurrent workers can both send the refund due to
       a status-update race. A missing regression test leaves the risk uncovered.
     step_limit: 6
-    reward_range: [0.0, 1.0]
+    reward_range: [0.01, 0.99]
 
 # ── Episode parameters ─────────────────────────────────────────────────────
 episode:
@@ -62,7 +62,7 @@ episode:
 
 # ── Reward function ────────────────────────────────────────────────────────
 reward:
-  range: [0.0, 1.0]
+  range: [0.01, 0.99]
   layers:
     - name: exploration_bonus
       description: "+0.05 per unique artifact opened before submitting"
