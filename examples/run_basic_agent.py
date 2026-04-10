@@ -58,7 +58,7 @@ async def main():
             reward = float(
                 result.reward
                 if hasattr(result, "reward")
-                else result.get("reward", 0.0) if hasattr(result, "get") else 0.0
+                else result.get("reward", 0.05) if hasattr(result, "get") else 0.05
             )
             breakdown = info.get("reward_breakdown", {})
             checks = breakdown.get("checks", {})

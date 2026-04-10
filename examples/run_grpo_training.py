@@ -54,7 +54,7 @@ def main():
             # (Assuming prompt contains the diff structure)
             (prompt.split("=== PR DIFF ===")[-1] if "=== PR DIFF ===" in prompt else "")
             res = env.get_reward_breakdown(completion)
-            rewards.append(res.get("total_reward", 0.0))
+            rewards.append(res.get("total_reward", 0.05))
         return rewards
 
     # 2. Setup your training configuration

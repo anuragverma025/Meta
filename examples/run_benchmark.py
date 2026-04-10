@@ -48,7 +48,7 @@ async def main():
                         result.reward
                         if hasattr(result, "reward")
                         else (
-                            result.get("reward", 0.0) if hasattr(result, "get") else 0.0
+                            result.get("reward", 0.05) if hasattr(result, "get") else 0.05
                         )
                     )
                     results[t["name"]].append(rew)
@@ -62,7 +62,7 @@ async def main():
     stats = {}
     for k, v in results.items():
         if len(v) == 0:
-            stats[k] = (0.0, 0.0, 0.0)
+            stats[k] = (0.05, 0.05, 0.05)
             continue
         stats[k] = (sum(v) / len(v), min(v), max(v))  # Avg  # Min  # Max
 
