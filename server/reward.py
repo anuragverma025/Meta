@@ -36,7 +36,7 @@ class RewardComputer:
             return RewardBreakdown(
                 reward=_MIN_PUBLIC_SCORE,
                 score=_MIN_PUBLIC_SCORE,
-                components={"artifact_progress": 0.0, "loop_penalty": -0.03},
+                components={"artifact_progress": 1e-4, "loop_penalty": -0.03},
                 grader_details=[],
             )
         artifact = task.artifacts[artifact_id]
@@ -44,7 +44,7 @@ class RewardComputer:
         return RewardBreakdown(
             reward=reward,
             score=_MIN_PUBLIC_SCORE,
-            components={"artifact_progress": reward, "loop_penalty": 0.0},
+            components={"artifact_progress": reward, "loop_penalty": -1e-4},
             grader_details=[],
         )
 
@@ -68,9 +68,9 @@ class RewardComputer:
         graded = grade_findings(task, findings, opened_artifacts)
         score = float(graded["score"])
         coverage_bonus = min(0.12, 0.03 * len(opened_artifacts))
-        efficiency_bonus = max(0.0, 0.08 - 0.02 * max(0, step_count - 2))
-        empty_penalty = -0.12 if not findings else 0.0
-        overstep_penalty = -0.05 if step_count > step_limit else 0.0
+        efficiency_bonus = max(1e-4, 0.08 - 0.02 * max(0, step_count - 2))
+        empty_penalty = -0.12 if not findings else -1e-4
+        overstep_penalty = -0.05 if step_count > step_limit else -1e-4
         shaped_reward = (
             score * 0.75
             + coverage_bonus
