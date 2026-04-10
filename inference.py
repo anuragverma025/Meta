@@ -2,20 +2,17 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 from openai import OpenAI
 
-from codereview_env.models import CodeReviewAction
+from codereview_env.models import CodeReviewAction, CodeReviewObservation
 from server.environment import CodeReviewEnvironment
 from server.tasks import TASKS
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN")
-
-if HF_TOKEN is None:
-    raise ValueError("HF_TOKEN environment variable is required")
 BENCHMARK = "codereview-env"
 MAX_STEPS = 6
 SUCCESS_SCORE_THRESHOLD = 0.60
@@ -30,12 +27,26 @@ Choose one action at a time. Prefer opening the most informative artifact before
 """
 
 
-def _observation_to_prompt(observation: Dict[str, Any]) -> str:
+def _require_hf_token() -> str:
+    """Return the configured Hugging Face token or raise a clear error."""
+    if HF_TOKEN:
+        return HF_TOKEN
+    raise ValueError("HF_TOKEN environment variable is required")
+
+
+def _build_client() -> OpenAI:
+    """Create the required OpenAI client for all model calls."""
+    return OpenAI(base_url=API_BASE_URL, api_key=_require_hf_token())
+
+
+def _observation_to_prompt(observation: dict[str, Any]) -> str:
+    """Convert the observation into a compact LLM prompt."""
     artifact_lines = []
     for artifact in observation["available_artifacts"]:
         status = "opened" if artifact["opened"] else "closed"
         artifact_lines.append(
-            f"- {artifact['artifact_id']} [{artifact['kind']}] {status}: {artifact['title']} :: {artifact['preview']}"
+            f"- {artifact['artifact_id']} [{artifact['kind']}] {status}: "
+            f"{artifact['title']} :: {artifact['preview']}"
         )
         if artifact["opened"] and artifact.get("content"):
             artifact_lines.append(f"  content: {artifact['content']}")
@@ -49,14 +60,11 @@ def _observation_to_prompt(observation: Dict[str, Any]) -> str:
     )
 
 
-def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
+def _scripted_policy(task_id: str, opened_ids: list[str]) -> dict[str, Any]:
+    """Fallback policy used when the LLM call fails."""
     plans = {
         "pagination-regression": [
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "test_log",
-                "note": "Need the failing test.",
-            },
+            {"action_type": "open_artifact", "artifact_id": "test_log", "note": "Need the failing test."},
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -73,16 +81,8 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
             },
         ],
         "tenant-export-auth": [
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "auth_middleware",
-                "note": "Inspect auth helpers.",
-            },
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "security_policy",
-                "note": "Confirm tenant policy.",
-            },
+            {"action_type": "open_artifact", "artifact_id": "auth_middleware", "note": "Inspect auth helpers."},
+            {"action_type": "open_artifact", "artifact_id": "security_policy", "note": "Confirm tenant policy."},
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -99,26 +99,10 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
             },
         ],
         "refund-idempotency": [
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "payment_client",
-                "note": "Check refund API.",
-            },
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "worker_log",
-                "note": "Inspect incident evidence.",
-            },
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "db_model",
-                "note": "Look for idempotency fields.",
-            },
-            {
-                "action_type": "open_artifact",
-                "artifact_id": "regression_test",
-                "note": "Check test coverage.",
-            },
+            {"action_type": "open_artifact", "artifact_id": "payment_client", "note": "Check refund API."},
+            {"action_type": "open_artifact", "artifact_id": "worker_log", "note": "Inspect incident evidence."},
+            {"action_type": "open_artifact", "artifact_id": "db_model", "note": "Look for idempotency fields."},
+            {"action_type": "open_artifact", "artifact_id": "regression_test", "note": "Check test coverage."},
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -146,7 +130,8 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
     return plan[min(open_count, len(plan) - 1)]
 
 
-def _llm_action(client: OpenAI, observation: Dict[str, Any]) -> Dict[str, Any]:
+def _llm_action(client: OpenAI, observation: dict[str, Any]) -> dict[str, Any]:
+    """Request the next action from the model via the OpenAI client."""
     response = client.chat.completions.create(
         model=MODEL_NAME,
         temperature=0,
@@ -160,56 +145,83 @@ def _llm_action(client: OpenAI, observation: Dict[str, Any]) -> Dict[str, Any]:
     return json.loads(content)
 
 
-def _format_action(action: Dict[str, Any]) -> str:
+def _choose_action(
+    client: OpenAI,
+    task_id: str,
+    observation: dict[str, Any],
+    opened_ids: list[str],
+) -> dict[str, Any]:
+    """Use the model first, then fall back to a deterministic policy on API failure."""
+    try:
+        return _llm_action(client, observation)
+    except Exception:
+        return _scripted_policy(task_id, opened_ids)
+
+
+def _format_action(action: dict[str, Any]) -> str:
+    """Serialize an action onto a single stdout-safe line."""
     return json.dumps(action, separators=(",", ":"), ensure_ascii=True)
 
 
-def main() -> None:
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+def _action_output_payload(action: CodeReviewAction) -> dict[str, Any]:
+    """Serialize only the contract-relevant action fields."""
+    payload: dict[str, Any] = {"action_type": action.action_type}
+    if action.action_type == "submit_review":
+        payload["artifact_id"] = action.artifact_id
+        payload["findings"] = [finding.model_dump() for finding in action.findings]
+    elif action.artifact_id is not None:
+        payload["artifact_id"] = action.artifact_id
+    if action.note is not None:
+        payload["note"] = action.note
+    return payload
 
-    for task in TASKS:
-        env = CodeReviewEnvironment()
-        rewards: List[float] = []
-        steps = 0
-        score = 0.0
+
+def _print_step(
+    step_number: int, action: CodeReviewAction, observation: CodeReviewObservation
+) -> None:
+    """Emit the required step output line immediately after env.step()."""
+    error_value = observation.last_action_error or "null"
+    print(
+        f"[STEP] step={step_number} action={_format_action(_action_output_payload(action))} "
+        f"reward={float(observation.reward or 0.0):.2f} "
+        f"done={str(observation.done).lower()} error={error_value}"
+    )
+
+
+def _run_task(task_id: str, client: OpenAI) -> None:
+    """Run one benchmark episode and emit only the required line types."""
+    env = CodeReviewEnvironment()
+    rewards: list[float] = []
+    score = 0.0
+    steps = 0
+    success = False
+    print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}")
+    try:
+        observation = env.reset(task_id=task_id)
+        while steps < MAX_STEPS and not observation.done:
+            obs_dict = observation.model_dump()
+            opened_ids = [artifact["artifact_id"] for artifact in obs_dict["opened_artifacts"]]
+            action_payload = _choose_action(client, task_id, obs_dict, opened_ids)
+            action = CodeReviewAction.model_validate(action_payload)
+            observation = env.step(action)
+            steps += 1
+            rewards.append(float(observation.reward or 0.0))
+            score = float(observation.score)
+            _print_step(steps, action, observation)
+        success = bool(observation.done and score >= SUCCESS_SCORE_THRESHOLD)
+    except Exception:
         success = False
-        observation = env.reset(task_id=task.task_id)
-        print(f"[START] task={task.task_id} env={BENCHMARK} model={MODEL_NAME}")
-        last_error = None
-        try:
-            while steps < MAX_STEPS and not observation.done:
-                obs_dict = observation.model_dump()
-                opened_ids = [
-                    artifact["artifact_id"] for artifact in obs_dict["opened_artifacts"]
-                ]
-                action_payload = (
-                    _llm_action(client, obs_dict)
-                    if client
-                    else _scripted_policy(task.task_id, opened_ids)
-                )
-                action = CodeReviewAction.model_validate(action_payload)
-                observation = env.step(action)
-                steps += 1
-                reward = float(observation.reward or 0.0)
-                rewards.append(reward)
-                score = float(observation.score)
-                last_error = observation.last_action_error
-                print(
-                    f"[STEP] step={steps} action={_format_action(action.model_dump())} "
-                    f"reward={reward:.2f} done={str(observation.done).lower()} "
-                    f"error={last_error if last_error is not None else 'null'}"
-                )
-            success = score >= SUCCESS_SCORE_THRESHOLD
-        except Exception as exc:
-            last_error = str(exc)
-        finally:
-            if hasattr(env, "close"):
-                env.close()
-            rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
-            print(
-                f"[END] success={str(success).lower()} steps={steps} "
-                f"rewards={rewards_str}"
-            )
+    finally:
+        env.close()
+        rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
+        print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")
+
+
+def main() -> None:
+    """Run the benchmark across all configured tasks."""
+    client = _build_client()
+    for task in TASKS:
+        _run_task(task.task_id, client)
 
 
 if __name__ == "__main__":
