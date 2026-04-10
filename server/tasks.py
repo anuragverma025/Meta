@@ -6,6 +6,12 @@ from typing import Dict, List, Literal, Sequence, Set
 from codereview_env.models import ReviewFinding
 
 Difficulty = Literal["easy", "medium", "hard"]
+_SCORE_EPS = 1e-6
+
+
+def _clamp_score(raw: float) -> float:
+    """Normalize public grader scores into the validator's required open interval."""
+    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
 
 
 @dataclass(frozen=True)
@@ -111,7 +117,7 @@ def grade_findings(
             }
         )
 
-    normalized = max(0.0, min(1.0, total))
+    normalized = _clamp_score(total)
     return {"score": normalized, "criteria": matched}
 
 

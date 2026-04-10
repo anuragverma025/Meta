@@ -6,6 +6,13 @@ from typing import Dict, List, Sequence, Set
 from codereview_env.models import ReviewFinding
 from server.tasks import ReviewTask, grade_findings
 
+_SCORE_EPS = 1e-6
+
+
+def _clamp_score(raw: float) -> float:
+    """Ensure externally visible scores stay strictly within (0, 1)."""
+    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
+
 
 @dataclass
 class RewardBreakdown:
@@ -26,24 +33,24 @@ class RewardComputer:
     ) -> RewardBreakdown:
         if repeated:
             return RewardBreakdown(
-                reward=0.0,
-                score=0.0,
+                reward=_SCORE_EPS,
+                score=_SCORE_EPS,
                 components={"artifact_progress": 0.0, "loop_penalty": -0.03},
                 grader_details=[],
             )
         artifact = task.artifacts[artifact_id]
-        reward = max(0.0, min(0.2, artifact.reward))
+        reward = _clamp_score(max(0.0, min(0.2, artifact.reward)))
         return RewardBreakdown(
             reward=reward,
-            score=0.0,
+            score=_SCORE_EPS,
             components={"artifact_progress": reward, "loop_penalty": 0.0},
             grader_details=[],
         )
 
     def invalid_action(self, message: str) -> RewardBreakdown:
         return RewardBreakdown(
-            reward=0.0,
-            score=0.0,
+            reward=_SCORE_EPS,
+            score=_SCORE_EPS,
             components={"invalid_action_penalty": -0.08},
             grader_details=[],
             last_action_error=message,
@@ -70,10 +77,10 @@ class RewardComputer:
             + empty_penalty
             + overstep_penalty
         )
-        shaped_reward = max(0.0, min(1.0, shaped_reward))
+        shaped_reward = _clamp_score(shaped_reward)
         return RewardBreakdown(
             reward=shaped_reward,
-            score=score,
+            score=_clamp_score(score),
             components={
                 "grader_score": round(score, 4),
                 "coverage_bonus": round(coverage_bonus, 4),

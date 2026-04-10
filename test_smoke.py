@@ -19,7 +19,7 @@ print(f"  Difficulties: {difficulties} ok")
 for task_meta in tasks:
     tid = task_meta["task_id"]
     result = grade_submission(tid, "looks good lgtm", [])
-    assert 0.0 <= result["score"] <= 1.0
+    assert 0.0 < result["score"] < 1.0
     print(f"  Grader {tid}: lazy_review={result['score']:.3f}")
 
 easy_id = [t["task_id"] for t in tasks if t["difficulty"] == "easy"][0]

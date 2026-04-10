@@ -14,6 +14,13 @@ from codereview_env.models import (
 from server.reward import RewardBreakdown, RewardComputer
 from server.tasks import TASKS, TASKS_BY_ID, ReviewTask
 
+_SCORE_EPS = 1e-6
+
+
+def _clamp_score(raw: float) -> float:
+    """Keep validator-visible scores strictly inside the open unit interval."""
+    return max(_SCORE_EPS, min(1.0 - _SCORE_EPS, raw))
+
 
 class CodeReviewEnvironment(
     Environment[CodeReviewObservation, CodeReviewAction, CodeReviewState]
@@ -66,11 +73,11 @@ class CodeReviewEnvironment(
         self._opened_artifact_ids = set(task.starting_artifacts)
         self._submitted_findings = []
         self._recent_events = ["Episode reset."]
-        self._cumulative_reward = 0.0
-        self._score = 0.0
+        self._cumulative_reward = _SCORE_EPS
+        self._score = _SCORE_EPS
         self._last_action_error = None
         self._episode_done = False
-        return self._build_observation(reward=0.0, done=False)
+        return self._build_observation(reward=_SCORE_EPS, done=False)
 
     def step(
         self, action: CodeReviewAction, timeout_s: Optional[float] = None, **kwargs: Any
@@ -79,7 +86,7 @@ class CodeReviewEnvironment(
             raise RuntimeError("reset() must be called before step().")
         if self._episode_done:
             self._last_action_error = "Episode already finished."
-            return self._build_observation(reward=0.0, done=True)
+            return self._build_observation(reward=_SCORE_EPS, done=True)
 
         self.step_count += 1
         reward_breakdown: RewardBreakdown
@@ -104,8 +111,8 @@ class CodeReviewEnvironment(
 
         self._episode_done = done
         self._last_action_error = reward_breakdown.last_action_error
-        self._cumulative_reward = max(
-            0.0, min(1.0, self._cumulative_reward + reward_breakdown.reward)
+        self._cumulative_reward = _clamp_score(
+            self._cumulative_reward + reward_breakdown.reward
         )
         self._recent_events.append(
             f"Step {self.step_count}: {action.action_type} -> reward {reward_breakdown.reward:.2f}"
@@ -133,8 +140,8 @@ class CodeReviewEnvironment(
             title=self.task.title if self.task else None,
             opened_artifact_ids=sorted(self._opened_artifact_ids),
             submitted_findings=self._submitted_findings,
-            cumulative_reward=round(self._cumulative_reward, 4),
-            score=round(self._score, 4),
+            cumulative_reward=round(_clamp_score(self._cumulative_reward), 6),
+            score=round(_clamp_score(self._score), 6),
             last_action_error=self._last_action_error,
             task_metadata=task_metadata,
         )
@@ -199,7 +206,7 @@ class CodeReviewEnvironment(
 
         metadata = {
             "task_id": self.task.task_id if self.task else None,
-            "score": round(self._score, 4),
+            "score": round(_clamp_score(self._score), 6),
             "step_count": self.step_count,
             "opened_artifact_ids": sorted(self._opened_artifact_ids),
         }
@@ -217,8 +224,8 @@ class CodeReviewEnvironment(
             available_artifacts=available_artifacts,
             recent_events=self._recent_events[-6:],
             last_action_error=self._last_action_error,
-            score=round(self._score, 4),
+            score=round(_clamp_score(self._score), 6),
             done=done,
-            reward=round(reward, 4),
+            reward=round(_clamp_score(reward), 6),
             metadata=metadata,
         )
