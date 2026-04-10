@@ -2,8 +2,12 @@ from codereview_env.models import ReviewFinding
 
 
 def test_reopening_artifact_penalizes_loops(reward_computer, hard_task):
-    first = reward_computer.artifact_reward(hard_task, "payment_client", set(), repeated=False)
-    second = reward_computer.artifact_reward(hard_task, "payment_client", {"payment_client"}, repeated=True)
+    first = reward_computer.artifact_reward(
+        hard_task, "payment_client", set(), repeated=False
+    )
+    second = reward_computer.artifact_reward(
+        hard_task, "payment_client", {"payment_client"}, repeated=True
+    )
     assert first.reward > 0.0
     assert second.components["loop_penalty"] < 0.0
 

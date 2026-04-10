@@ -5,7 +5,6 @@ from typing import Dict, List, Literal, Sequence, Set
 
 from codereview_env.models import ReviewFinding
 
-
 Difficulty = Literal["easy", "medium", "hard"]
 
 
@@ -54,7 +53,9 @@ def _contains_group(text: str, groups: Sequence[Set[str]]) -> float:
     return hits / len(groups)
 
 
-def grade_findings(task: ReviewTask, findings: Sequence[ReviewFinding], opened_artifacts: Set[str]) -> Dict[str, object]:
+def grade_findings(
+    task: ReviewTask, findings: Sequence[ReviewFinding], opened_artifacts: Set[str]
+) -> Dict[str, object]:
     matched = []
     total = 0.0
     finding_texts = []
@@ -83,7 +84,11 @@ def grade_findings(task: ReviewTask, findings: Sequence[ReviewFinding], opened_a
                 if not criterion.preferred_artifacts
                 else min(
                     1.0,
-                    sum(1 for artifact_id in criterion.preferred_artifacts if artifact_id in opened_artifacts)
+                    sum(
+                        1
+                        for artifact_id in criterion.preferred_artifacts
+                        if artifact_id in opened_artifacts
+                    )
                     / len(criterion.preferred_artifacts),
                 )
             )
@@ -167,7 +172,13 @@ TASKS: List[ReviewTask] = [
                 severity="medium",
                 weight=0.65,
                 required_terms=(
-                    {"page 0", "page zero", "negative page", "page must be >= 1", "invalid page"},
+                    {
+                        "page 0",
+                        "page zero",
+                        "negative page",
+                        "page must be >= 1",
+                        "invalid page",
+                    },
                     {"slice", "negative index", "items[-", "from the end"},
                 ),
                 recommendation_terms=(
@@ -263,14 +274,24 @@ TASKS: List[ReviewTask] = [
                 severity="critical",
                 weight=0.7,
                 required_terms=(
-                    {"cross-tenant", "tenant", "account scope", "data leak", "authorization"},
+                    {
+                        "cross-tenant",
+                        "tenant",
+                        "account scope",
+                        "data leak",
+                        "authorization",
+                    },
                     {"query param", "account_id", "untrusted", "arbitrary"},
                 ),
                 recommendation_terms=(
                     {"require_account_scope", "tenant check", "scope", "authorize"},
                     {"before export", "request.user.account_id", "is_global_admin"},
                 ),
-                preferred_artifacts=("route_diff", "auth_middleware", "security_policy"),
+                preferred_artifacts=(
+                    "route_diff",
+                    "auth_middleware",
+                    "security_policy",
+                ),
             ),
             GraderCriterion(
                 criterion_id="missing-admin-gate",
@@ -282,7 +303,9 @@ TASKS: List[ReviewTask] = [
                     {"require_admin", "admin role", "admin gate", "privilege"},
                     {"missing", "not called", "no check", "unguarded"},
                 ),
-                recommendation_terms=({"call require_admin", "guard", "before reading params"},),
+                recommendation_terms=(
+                    {"call require_admin", "guard", "before reading params"},
+                ),
                 preferred_artifacts=("route_diff", "auth_middleware"),
             ),
         ),
@@ -383,14 +406,24 @@ TASKS: List[ReviewTask] = [
                 severity="critical",
                 weight=0.5,
                 required_terms=(
-                    {"idempotency", "duplicate refund", "same refund twice", "processor accepted"},
+                    {
+                        "idempotency",
+                        "duplicate refund",
+                        "same refund twice",
+                        "processor accepted",
+                    },
                     {"timeout", "retry", "second call", "replay"},
                 ),
                 recommendation_terms=(
                     {"idempotency_key", "persist", "reuse"},
                     {"before calling processor", "db", "same key on retry"},
                 ),
-                preferred_artifacts=("worker_diff", "payment_client", "db_model", "incident_ticket"),
+                preferred_artifacts=(
+                    "worker_diff",
+                    "payment_client",
+                    "db_model",
+                    "incident_ticket",
+                ),
             ),
             GraderCriterion(
                 criterion_id="status-update-race",
@@ -399,10 +432,24 @@ TASKS: List[ReviewTask] = [
                 severity="high",
                 weight=0.35,
                 required_terms=(
-                    {"concurrent", "two workers", "race", "visibility timeout", "picked queued job"},
+                    {
+                        "concurrent",
+                        "two workers",
+                        "race",
+                        "visibility timeout",
+                        "picked queued job",
+                    },
                     {"status", "after success", "not locked", "before call"},
                 ),
-                recommendation_terms=({"claim", "lock", "transaction", "update status first", "compare-and-set"},),
+                recommendation_terms=(
+                    {
+                        "claim",
+                        "lock",
+                        "transaction",
+                        "update status first",
+                        "compare-and-set",
+                    },
+                ),
                 preferred_artifacts=("worker_diff", "worker_log"),
             ),
             GraderCriterion(
@@ -413,7 +460,12 @@ TASKS: List[ReviewTask] = [
                 weight=0.15,
                 required_terms=(
                     {"test", "regression", "integration test"},
-                    {"timeout after success", "replay", "concurrent worker", "duplicate refund"},
+                    {
+                        "timeout after success",
+                        "replay",
+                        "concurrent worker",
+                        "duplicate refund",
+                    },
                 ),
                 recommendation_terms=({"add", "cover", "simulate"},),
                 preferred_artifacts=("regression_test",),
@@ -429,6 +481,7 @@ TASKS_BY_ID = {task.task_id: task for task in TASKS}
 # ──────────────────────────────────────────────────────────────────────────────
 # Compatibility shims — used by environment.py, app.py, and inference.py
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def list_tasks() -> List[Dict[str, object]]:
     """Return lightweight task metadata list (for /tasks endpoint)."""
@@ -447,7 +500,9 @@ def list_tasks() -> List[Dict[str, object]]:
 def get_task(task_id: str) -> Dict[str, object]:
     """Return a task as a plain dict by ID. Raises ValueError if unknown."""
     if task_id not in TASKS_BY_ID:
-        raise ValueError(f"Unknown task '{task_id}'. Available: {list(TASKS_BY_ID.keys())}")
+        raise ValueError(
+            f"Unknown task '{task_id}'. Available: {list(TASKS_BY_ID.keys())}"
+        )
     t = TASKS_BY_ID[task_id]
 
     # Build the dict shape expected by environment.py
@@ -535,7 +590,8 @@ def grade_submission(
     # Determine which artifacts were "opened" (inferred from review text mentioning artifact IDs)
     text_lower = (review_text or "").lower()
     opened: Set[str] = {
-        aid for aid in task.artifacts
+        aid
+        for aid in task.artifacts
         if aid.replace("_", " ") in text_lower or aid in text_lower
     }
 
@@ -550,6 +606,7 @@ def grade_submission(
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
 
 def _primary_file(task: "ReviewTask") -> str:
     """Return the first grader criterion's file_path as the 'primary' file."""

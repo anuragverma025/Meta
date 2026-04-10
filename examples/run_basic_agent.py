@@ -13,6 +13,7 @@ import asyncio
 from codereview_env.client import CodeReviewEnv
 from codereview_env.models import CodeReviewAction
 
+
 async def main():
     print("============================================================")
     print(" 🤖 Welcome to CodeReview-Env Basic Agent Run ")
@@ -20,7 +21,7 @@ async def main():
     print(" diff, and submit a hardcoded actionable review.")
     print("============================================================\n")
 
-    port = os.getenv("PORT", "8000") # Use 7860 if running via docker mapping
+    port = os.getenv("PORT", "8000")  # Use 7860 if running via docker mapping
     base_url = f"http://localhost:{port}"
     print(f"[*] Connecting to Environment Server at {base_url}...")
 
@@ -31,31 +32,40 @@ async def main():
             print(f"    Loaded file: {obs.filename} ({obs.language})")
             print("    PR Diff Snippet:")
             print("------------------------------------------------------------")
-            print(obs.pr_diff[:300] + "\n..." if len(obs.pr_diff) > 300 else obs.pr_diff)
+            print(
+                obs.pr_diff[:300] + "\n..." if len(obs.pr_diff) > 300 else obs.pr_diff
+            )
             print("------------------------------------------------------------\n")
 
             hardcoded_review = (
                 "Line 3: There's an off-by-one error here. The loop should use < len(items) "
                 "instead of <= len(items). Consider using enumerate() for cleaner iteration."
             )
-            print(f"[*] Submitting Review:\n    \"{hardcoded_review}\"\n")
+            print(f'[*] Submitting Review:\n    "{hardcoded_review}"\n')
 
             action = CodeReviewAction(
-                review_comment=hardcoded_review,
-                severity="major",
-                line_references=[3]
+                review_comment=hardcoded_review, severity="major", line_references=[3]
             )
 
             result = await env.step(action)
-            
+
             # The result could be a StepResult or mapping depending on OpenEnv integration
-            info = result.info if hasattr(result, "info") else result.get("info", {}) if isinstance(result, dict) else {}
-            reward = float(result.reward if hasattr(result, "reward") else result.get("reward", 0.0) if hasattr(result, "get") else 0.0)
+            info = (
+                result.info
+                if hasattr(result, "info")
+                else result.get("info", {}) if isinstance(result, dict) else {}
+            )
+            reward = float(
+                result.reward
+                if hasattr(result, "reward")
+                else result.get("reward", 0.0) if hasattr(result, "get") else 0.0
+            )
             breakdown = info.get("reward_breakdown", {})
             checks = breakdown.get("checks", {})
             llm = breakdown.get("llm_scores", {})
 
-            def tick(val): return "✅" if val else "❌"
+            def tick(val):
+                return "✅" if val else "❌"
 
             table = f"""
 ┌─────────────────────────────┬────────┐
@@ -79,6 +89,7 @@ async def main():
         except Exception as e:
             print(f"Error communicating with environment: {e}")
             print("Make sure your API server is running (uvicorn server.app:app)")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

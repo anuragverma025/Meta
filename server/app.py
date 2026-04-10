@@ -11,7 +11,11 @@ import os
 from typing import Any
 import uvicorn
 
-from codereview_env.models import CodeReviewAction, CodeReviewObservation, CodeReviewState
+from codereview_env.models import (
+    CodeReviewAction,
+    CodeReviewObservation,
+    CodeReviewState,
+)
 from server.environment import CodeReviewEnvironment
 from server.tasks import TASKS, TASKS_BY_ID, grade_submission
 
@@ -52,7 +56,9 @@ def _serialize_step(observation: CodeReviewObservation, session_id: str) -> dict
 def _resolve_session(session_id: str | None) -> tuple[str, CodeReviewEnvironment]:
     selected_session_id = session_id or _latest_session_id
     if not selected_session_id or selected_session_id not in _sessions:
-        raise HTTPException(status_code=404, detail="No active session. Call /reset first.")
+        raise HTTPException(
+            status_code=404, detail="No active session. Call /reset first."
+        )
     return selected_session_id, _sessions[selected_session_id]
 
 
@@ -61,22 +67,24 @@ def _resolve_session(session_id: str | None) -> tuple[str, CodeReviewEnvironment
 @app.get("/ui", include_in_schema=False, response_model=None)
 def root(request: Request) -> Any:
     index_path = _frontend_dir / "index.html"
-    
+
     # Debug info for logs
     print(f"DEBUG: Root request for {request.url.path}")
     print(f"DEBUG: Looking for index.html at {index_path}")
-    
+
     if not index_path.exists():
         return JSONResponse(
-            status_code=404, 
+            status_code=404,
             content={
                 "error": "Dashboard files missing",
                 "searched_at": str(index_path),
                 "cwd": os.getcwd(),
                 "frontend_dir_exists": _frontend_dir.exists(),
                 "frontend_dir": str(_frontend_dir),
-                "files_in_frontend": os.listdir(str(_frontend_dir)) if _frontend_dir.exists() else []
-            }
+                "files_in_frontend": (
+                    os.listdir(str(_frontend_dir)) if _frontend_dir.exists() else []
+                ),
+            },
         )
     return FileResponse(index_path)
 
@@ -195,7 +203,9 @@ def demo() -> dict:
 
 @app.exception_handler(KeyError)
 async def handle_key_error(request: Request, exc: KeyError) -> JSONResponse:
-    return JSONResponse(status_code=400, content={"error": f"Unknown key: {exc.args[0]}"})
+    return JSONResponse(
+        status_code=400, content={"error": f"Unknown key: {exc.args[0]}"}
+    )
 
 
 def main() -> None:

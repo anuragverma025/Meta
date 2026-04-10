@@ -45,7 +45,10 @@ class CodeReviewEnvironment(
         }
 
     def reset(
-        self, seed: Optional[int] = None, episode_id: Optional[str] = None, **kwargs: Any
+        self,
+        seed: Optional[int] = None,
+        episode_id: Optional[str] = None,
+        **kwargs: Any,
     ) -> CodeReviewObservation:
         task_id = kwargs.get("task_id")
         if task_id:
@@ -88,16 +91,22 @@ class CodeReviewEnvironment(
             reward_breakdown = self._handle_submit(action)
             done = True
         else:
-            reward_breakdown = self.reward_computer.invalid_action("Unsupported action_type.")
+            reward_breakdown = self.reward_computer.invalid_action(
+                "Unsupported action_type."
+            )
             done = False
 
         if self.step_count >= self._step_limit and not done:
-            self._recent_events.append("Step limit reached before review was submitted.")
+            self._recent_events.append(
+                "Step limit reached before review was submitted."
+            )
             done = True
 
         self._episode_done = done
         self._last_action_error = reward_breakdown.last_action_error
-        self._cumulative_reward = max(0.0, min(1.0, self._cumulative_reward + reward_breakdown.reward))
+        self._cumulative_reward = max(
+            0.0, min(1.0, self._cumulative_reward + reward_breakdown.reward)
+        )
         self._recent_events.append(
             f"Step {self.step_count}: {action.action_type} -> reward {reward_breakdown.reward:.2f}"
         )
@@ -133,15 +142,21 @@ class CodeReviewEnvironment(
     def _handle_open_artifact(self, action: CodeReviewAction) -> RewardBreakdown:
         artifact_id = action.artifact_id
         if not artifact_id:
-            return self.reward_computer.invalid_action("artifact_id is required for open_artifact.")
+            return self.reward_computer.invalid_action(
+                "artifact_id is required for open_artifact."
+            )
         if artifact_id not in self.task.artifacts:
-            return self.reward_computer.invalid_action(f"Unknown artifact_id: {artifact_id}")
+            return self.reward_computer.invalid_action(
+                f"Unknown artifact_id: {artifact_id}"
+            )
 
         repeated = artifact_id in self._opened_artifact_ids
         self._opened_artifact_ids.add(artifact_id)
         artifact = self.task.artifacts[artifact_id]
         self._recent_events.append(f"Opened {artifact.title}.")
-        return self.reward_computer.artifact_reward(self.task, artifact_id, self._opened_artifact_ids, repeated)
+        return self.reward_computer.artifact_reward(
+            self.task, artifact_id, self._opened_artifact_ids, repeated
+        )
 
     def _handle_submit(self, action: CodeReviewAction) -> RewardBreakdown:
         self._submitted_findings = list(action.findings)
@@ -172,7 +187,11 @@ class CodeReviewEnvironment(
                     title=artifact.title,
                     preview=artifact.preview,
                     opened=artifact_id in self._opened_artifact_ids,
-                    content=artifact.content if artifact_id in self._opened_artifact_ids else None,
+                    content=(
+                        artifact.content
+                        if artifact_id in self._opened_artifact_ids
+                        else None
+                    ),
                 )
                 available_artifacts.append(model)
                 if model.opened:

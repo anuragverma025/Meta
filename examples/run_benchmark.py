@@ -16,8 +16,12 @@ from codereview_env.models import CodeReviewAction
 TYPES = [
     {"name": "Generic (bad)", "text": "LGTM looks good!"},
     {"name": "Medium", "text": "There might be an issue here. Consider fixing it."},
-    {"name": "Specific (good)", "text": "Line 3: Critical bug — The indexing is exceeding array bounds causing a runtime error. Switch `>` to `>=` to patch it safely."}
+    {
+        "name": "Specific (good)",
+        "text": "Line 3: Critical bug — The indexing is exceeding array bounds causing a runtime error. Switch `>` to `>=` to patch it safely.",
+    },
 ]
+
 
 async def main():
     print("============================================================")
@@ -27,12 +31,8 @@ async def main():
 
     port = os.getenv("PORT", "8000")
     base_url = f"http://localhost:{port}"
-    
-    results = {
-        "Generic (bad)": [],
-        "Medium": [],
-        "Specific (good)": []
-    }
+
+    results = {"Generic (bad)": [], "Medium": [], "Specific (good)": []}
 
     async with CodeReviewEnv(base_url=base_url) as env:
         for t in TYPES:
@@ -40,25 +40,31 @@ async def main():
             for i in range(10):
                 try:
                     await env.reset()
-                    action = CodeReviewAction(review_comment=t["text"], severity="major")
+                    action = CodeReviewAction(
+                        review_comment=t["text"], severity="major"
+                    )
                     result = await env.step(action)
-                    rew = float(result.reward if hasattr(result, "reward") else result.get("reward", 0.0) if hasattr(result, "get") else 0.0)
+                    rew = float(
+                        result.reward
+                        if hasattr(result, "reward")
+                        else (
+                            result.get("reward", 0.0) if hasattr(result, "get") else 0.0
+                        )
+                    )
                     results[t["name"]].append(rew)
                 except Exception as e:
-                    print(f"Error on iteration {i}: {e}. Ensure API relies on localhost:{port}")
+                    print(
+                        f"Error on iteration {i}: {e}. Ensure API relies on localhost:{port}"
+                    )
                     break
-    
+
     # Calculate statistics
     stats = {}
     for k, v in results.items():
         if len(v) == 0:
             stats[k] = (0.0, 0.0, 0.0)
             continue
-        stats[k] = (
-            sum(v) / len(v),      # Avg
-            min(v),               # Min
-            max(v)                # Max
-        )
+        stats[k] = (sum(v) / len(v), min(v), max(v))  # Avg  # Min  # Max
 
     # Output Table
     print("\n┌────────────────┬──────────────┬──────────────┬──────────────┐")
@@ -67,6 +73,7 @@ async def main():
     for k, (avg, mn, mx) in stats.items():
         print(f"│ {k:<14} │    {avg:.2f}      │    {mn:.2f}      │    {mx:.2f}      │")
     print("└────────────────┴──────────────┴──────────────┴──────────────┘\n")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

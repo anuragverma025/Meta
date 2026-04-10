@@ -2,7 +2,6 @@ import httpx
 import pytest
 
 from codereview_env.client import CodeReviewEnv
-from codereview_env.models import CodeReviewAction
 from server.app import app
 
 

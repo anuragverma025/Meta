@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import httpx
 
-from codereview_env.models import CodeReviewAction, CodeReviewObservation, CodeReviewState
+from codereview_env.models import (
+    CodeReviewAction,
+    CodeReviewObservation,
+    CodeReviewState,
+)
 
 
 class SyncCodeReviewEnv:
@@ -38,7 +42,9 @@ class CodeReviewEnv:
             response = await client.post("/reset", json=kwargs or {})
             response.raise_for_status()
             payload = response.json()
-            observation = CodeReviewObservation.model_validate(payload.get("observation", payload))
+            observation = CodeReviewObservation.model_validate(
+                payload.get("observation", payload)
+            )
             if "reward" in payload:
                 observation.reward = payload["reward"]
             if "done" in payload:
@@ -51,7 +57,9 @@ class CodeReviewEnv:
             response = await client.post("/step", json={"action": action.model_dump()})
             response.raise_for_status()
             payload = response.json()
-            observation = CodeReviewObservation.model_validate(payload.get("observation", payload))
+            observation = CodeReviewObservation.model_validate(
+                payload.get("observation", payload)
+            )
             if "reward" in payload:
                 observation.reward = payload["reward"]
             if "done" in payload:
@@ -68,7 +76,9 @@ class CodeReviewEnv:
             task_id=self._last_observation.task_id,
             difficulty=self._last_observation.difficulty,
             title=self._last_observation.title,
-            opened_artifact_ids=list(self._last_observation.metadata.get("opened_artifact_ids", [])),
+            opened_artifact_ids=list(
+                self._last_observation.metadata.get("opened_artifact_ids", [])
+            ),
             cumulative_reward=0.0,
             score=self._last_observation.score,
             last_action_error=self._last_observation.last_action_error,

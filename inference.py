@@ -10,7 +10,6 @@ from codereview_env.models import CodeReviewAction
 from server.environment import CodeReviewEnvironment
 from server.tasks import TASKS
 
-
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("API_KEY")
@@ -50,7 +49,11 @@ def _observation_to_prompt(observation: Dict[str, Any]) -> str:
 def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
     plans = {
         "pagination-regression": [
-            {"action_type": "open_artifact", "artifact_id": "test_log", "note": "Need the failing test."},
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "test_log",
+                "note": "Need the failing test.",
+            },
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -67,8 +70,16 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
             },
         ],
         "tenant-export-auth": [
-            {"action_type": "open_artifact", "artifact_id": "auth_middleware", "note": "Inspect auth helpers."},
-            {"action_type": "open_artifact", "artifact_id": "security_policy", "note": "Confirm tenant policy."},
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "auth_middleware",
+                "note": "Inspect auth helpers.",
+            },
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "security_policy",
+                "note": "Confirm tenant policy.",
+            },
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -85,10 +96,26 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
             },
         ],
         "refund-idempotency": [
-            {"action_type": "open_artifact", "artifact_id": "payment_client", "note": "Check refund API."},
-            {"action_type": "open_artifact", "artifact_id": "worker_log", "note": "Inspect incident evidence."},
-            {"action_type": "open_artifact", "artifact_id": "db_model", "note": "Look for idempotency fields."},
-            {"action_type": "open_artifact", "artifact_id": "regression_test", "note": "Check test coverage."},
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "payment_client",
+                "note": "Check refund API.",
+            },
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "worker_log",
+                "note": "Inspect incident evidence.",
+            },
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "db_model",
+                "note": "Look for idempotency fields.",
+            },
+            {
+                "action_type": "open_artifact",
+                "artifact_id": "regression_test",
+                "note": "Check test coverage.",
+            },
             {
                 "action_type": "submit_review",
                 "findings": [
@@ -108,7 +135,11 @@ def _scripted_policy(task_id: str, opened_ids: List[str]) -> Dict[str, Any]:
     plan = plans[task_id]
     if not opened_ids:
         return plan[0]
-    open_count = sum(1 for step in plan if step["action_type"] == "open_artifact" and step["artifact_id"] in opened_ids)
+    open_count = sum(
+        1
+        for step in plan
+        if step["action_type"] == "open_artifact" and step["artifact_id"] in opened_ids
+    )
     return plan[min(open_count, len(plan) - 1)]
 
 
@@ -145,8 +176,14 @@ def main() -> None:
         try:
             while steps < MAX_STEPS and not observation.done:
                 obs_dict = observation.model_dump()
-                opened_ids = [artifact["artifact_id"] for artifact in obs_dict["opened_artifacts"]]
-                action_payload = _llm_action(client, obs_dict) if client else _scripted_policy(task.task_id, opened_ids)
+                opened_ids = [
+                    artifact["artifact_id"] for artifact in obs_dict["opened_artifacts"]
+                ]
+                action_payload = (
+                    _llm_action(client, obs_dict)
+                    if client
+                    else _scripted_policy(task.task_id, opened_ids)
+                )
                 action = CodeReviewAction.model_validate(action_payload)
                 observation = env.step(action)
                 steps += 1

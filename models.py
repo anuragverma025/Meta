@@ -69,7 +69,9 @@ class CodeReviewObservation(Observation):
     # Step-level signals (populated by environment)
     done: bool = Field(default=False, description="Whether the episode has ended.")
     reward: float = Field(default=0.0, description="Reward earned on this step.")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Extra per-step metadata.")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Extra per-step metadata."
+    )
 
 
 class CodeReviewState(State):

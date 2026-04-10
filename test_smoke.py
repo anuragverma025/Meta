@@ -1,4 +1,5 @@
 ﻿"""Quick smoke test - run with: python test_smoke.py"""
+
 from codereview_env.models import CodeReviewAction, ReviewFinding
 from server.environment import CodeReviewEnvironment
 from server.tasks import grade_submission, list_tasks
@@ -9,7 +10,7 @@ tasks = list_tasks()
 print(f"Tasks ({len(tasks)}): {[t['task_id'] for t in tasks]}")
 assert len(tasks) == 3, f"Expected 3 tasks, got {len(tasks)}"
 
-difficulties = [t['difficulty'] for t in tasks]
+difficulties = [t["difficulty"] for t in tasks]
 assert "easy" in difficulties
 assert "medium" in difficulties
 assert "hard" in difficulties
@@ -48,7 +49,9 @@ result2 = env.step(
         ],
     )
 )
-print(f"  submit_review: reward={result2.reward:.3f} score={result2.score:.3f} done={result2.done}")
+print(
+    f"  submit_review: reward={result2.reward:.3f} score={result2.score:.3f} done={result2.done}"
+)
 assert result2.done
 assert result2.score > 0.1
 

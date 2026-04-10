@@ -12,18 +12,20 @@ pip install trl accelerate
 """
 
 import os
-# We provide a boilerplate structural example. Standard GRPO involves the environment 
+
+# We provide a boilerplate structural example. Standard GRPO involves the environment
 # mapping dataset inputs over the reward output. TRL makes this seamless with the RewardAPI.
-import torch
 try:
-    from trl import GRPOTrainer, GRPOConfig
-    from transformers import AutoTokenizer, AutoModelForCausalLM
+    from trl import GRPOTrainer, GRPOConfig  # noqa: F401
+    from transformers import AutoTokenizer, AutoModelForCausalLM  # noqa: F401
+
     TRL_AVAILABLE = True
 except ImportError:
     TRL_AVAILABLE = False
 
 
 from codereview_env.client import CodeReviewEnv
+
 
 def main():
     print("============================================================")
@@ -40,7 +42,7 @@ def main():
     # We instantiate our synchronous environment:
     port = os.getenv("PORT", "8000")
     env = CodeReviewEnv(base_url=f"http://localhost:{port}").sync()
-    
+
     def openenv_reward_function(completions, prompts, **kwargs):
         """
         TRL passes the generated completions and the source prompts.
@@ -50,20 +52,20 @@ def main():
         for prompt, completion in zip(prompts, completions):
             # Evaluate the single completion against the mocked API diff prompt
             # (Assuming prompt contains the diff structure)
-            pr_diff = prompt.split("=== PR DIFF ===")[-1] if "=== PR DIFF ===" in prompt else ""
+            (prompt.split("=== PR DIFF ===")[-1] if "=== PR DIFF ===" in prompt else "")
             res = env.get_reward_breakdown(completion)
             rewards.append(res.get("total_reward", 0.0))
         return rewards
 
     # 2. Setup your training configuration
     print("[*] Initializing GRPOConfig parameters...")
-    training_args = GRPOConfig(
+    GRPOConfig(
         output_dir="codereview-model",
         learning_rate=1e-5,
         per_device_train_batch_size=4,
         gradient_accumulation_steps=2,
         num_train_epochs=3,
-        logging_steps=10
+        logging_steps=10,
     )
 
     # 3. Load Agent Model (e.g. Qwen or LLaMa-3 lightweight adapter)
@@ -73,7 +75,7 @@ def main():
     # model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.bfloat16)
 
     # 4. Integrate Dataset
-    # TRL accepts Huggingface mapped datasets directly. 
+    # TRL accepts Huggingface mapped datasets directly.
     # train_dataset = load_dataset("microsoft/CodeReviewer", split="train[:1000]")
 
     # 5. Initialize & Train
@@ -85,8 +87,9 @@ def main():
     #     train_dataset=train_dataset
     # )
     # trainer.train()
-    
+
     print("\n✅ Setup complete! Uncomment model initialization and dataset to run.")
+
 
 if __name__ == "__main__":
     main()

@@ -18,7 +18,11 @@ class RewardBreakdown:
 
 class RewardComputer:
     def artifact_reward(
-        self, task: ReviewTask, artifact_id: str, opened_artifacts: Set[str], repeated: bool
+        self,
+        task: ReviewTask,
+        artifact_id: str,
+        opened_artifacts: Set[str],
+        repeated: bool,
     ) -> RewardBreakdown:
         if repeated:
             return RewardBreakdown(
@@ -59,7 +63,13 @@ class RewardComputer:
         efficiency_bonus = max(0.0, 0.08 - 0.02 * max(0, step_count - 2))
         empty_penalty = -0.12 if not findings else 0.0
         overstep_penalty = -0.05 if step_count > step_limit else 0.0
-        shaped_reward = score * 0.75 + coverage_bonus + efficiency_bonus + empty_penalty + overstep_penalty
+        shaped_reward = (
+            score * 0.75
+            + coverage_bonus
+            + efficiency_bonus
+            + empty_penalty
+            + overstep_penalty
+        )
         shaped_reward = max(0.0, min(1.0, shaped_reward))
         return RewardBreakdown(
             reward=shaped_reward,

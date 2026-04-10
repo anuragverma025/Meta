@@ -10,14 +10,20 @@ def test_reset_returns_task_observation(env):
 
 def test_open_artifact_gives_partial_reward(env):
     env.reset(task_id="pagination-regression")
-    observation = env.step(CodeReviewAction(action_type="open_artifact", artifact_id="test_log"))
+    observation = env.step(
+        CodeReviewAction(action_type="open_artifact", artifact_id="test_log")
+    )
     assert 0.0 < observation.reward <= 0.2
-    assert any(artifact.artifact_id == "test_log" for artifact in observation.opened_artifacts)
+    assert any(
+        artifact.artifact_id == "test_log" for artifact in observation.opened_artifacts
+    )
 
 
 def test_submit_review_finishes_episode_with_score(env):
     env.reset(task_id="tenant-export-auth")
-    env.step(CodeReviewAction(action_type="open_artifact", artifact_id="auth_middleware"))
+    env.step(
+        CodeReviewAction(action_type="open_artifact", artifact_id="auth_middleware")
+    )
     observation = env.step(
         CodeReviewAction(
             action_type="submit_review",
@@ -40,7 +46,9 @@ def test_submit_review_finishes_episode_with_score(env):
 
 def test_state_reports_progress(env):
     env.reset(task_id="refund-idempotency")
-    env.step(CodeReviewAction(action_type="open_artifact", artifact_id="payment_client"))
+    env.step(
+        CodeReviewAction(action_type="open_artifact", artifact_id="payment_client")
+    )
     state = env.state
     assert isinstance(state, CodeReviewState)
     assert state.step_count == 1
@@ -50,5 +58,7 @@ def test_state_reports_progress(env):
 def test_step_limit_ends_episode(env):
     observation = env.reset(task_id="pagination-regression")
     for _ in range(observation.step_limit):
-        observation = env.step(CodeReviewAction(action_type="open_artifact", artifact_id="ticket"))
+        observation = env.step(
+            CodeReviewAction(action_type="open_artifact", artifact_id="ticket")
+        )
     assert observation.done is True
