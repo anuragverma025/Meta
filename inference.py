@@ -12,7 +12,10 @@ from server.tasks import TASKS
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or os.getenv("API_KEY")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
 BENCHMARK = "codereview-env"
 MAX_STEPS = 6
 SUCCESS_SCORE_THRESHOLD = 0.60
@@ -162,7 +165,7 @@ def _format_action(action: Dict[str, Any]) -> str:
 
 
 def main() -> None:
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY) if API_KEY else None
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     for task in TASKS:
         env = CodeReviewEnvironment()
@@ -205,7 +208,7 @@ def main() -> None:
             rewards_str = ",".join(f"{reward:.2f}" for reward in rewards)
             print(
                 f"[END] success={str(success).lower()} steps={steps} "
-                f"score={score:.2f} rewards={rewards_str}"
+                f"rewards={rewards_str}"
             )
 
 
