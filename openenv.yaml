@@ -1,10 +1,16 @@
+spec_version: 1
 name: codereview-env
-version: "2.0.0"
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+
 description: >
   A real-world OpenEnv RL environment for training LLM agents to write
   high-quality, actionable code reviews. Agents learn to inspect PR diffs,
   request more context, and submit structured findings across three
   difficulty tiers (easy → medium → hard).
+
 author: "Anurag137"
 tags:
   - code-review
@@ -15,12 +21,7 @@ tags:
   - security
   - hackathon-2026
 
-# ── OpenEnv spec compliance ────────────────────────────────────────────────
-environment_class: server.environment.CodeReviewEnvironment
-action_class: server.environment.CodeReviewAction
-observation_class: server.environment.CodeReviewObservation
-
-# ── Task registry ──────────────────────────────────────────────────────────
+# ── Task registry ──────────────────────────────────────────────────────────────
 tasks:
   - id: pagination-regression
     difficulty: easy
@@ -31,6 +32,7 @@ tasks:
       (page 0 / negative pages create dangerous negative-index slices).
     step_limit: 4
     reward_range: [0.01, 0.99]
+    grader: server.tasks.grade_findings
 
   - id: tenant-export-auth
     difficulty: medium
@@ -41,6 +43,7 @@ tasks:
       data leak and missing admin-role gate must be caught.
     step_limit: 5
     reward_range: [0.01, 0.99]
+    grader: server.tasks.grade_findings
 
   - id: refund-idempotency
     difficulty: hard
@@ -51,8 +54,9 @@ tasks:
       a status-update race. A missing regression test leaves the risk uncovered.
     step_limit: 6
     reward_range: [0.01, 0.99]
+    grader: server.tasks.grade_findings
 
-# ── Episode parameters ─────────────────────────────────────────────────────
+# ── Episode parameters ─────────────────────────────────────────────────────────
 episode:
   type: multi-step
   max_steps: 7
@@ -60,7 +64,7 @@ episode:
     - open_artifact   # Explore additional context (partial reward)
     - submit_review   # Submit findings (graded; ends episode)
 
-# ── Reward function ────────────────────────────────────────────────────────
+# ── Reward function ────────────────────────────────────────────────────────────
 reward:
   range: [0.01, 0.99]
   layers:

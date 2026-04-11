@@ -41,7 +41,8 @@ if not _frontend_dir.exists():
     # Fallback for container structured where source might be in /app
     _frontend_dir = Path("/app/frontend").resolve()
 
-app.mount("/static", StaticFiles(directory=str(_frontend_dir)), name="static")
+app.mount("/static", StaticFiles(directory=str(_frontend_dir)), name="static") if _frontend_dir.exists() else None
+
 
 
 def _serialize_step(observation: CodeReviewObservation, session_id: str) -> dict:
