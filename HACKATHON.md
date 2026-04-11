@@ -1,34 +1,43 @@
 # CodeReview-Env — Hackathon Impact Statement
 
+**(Meta × PyTorch × HuggingFace OpenEnv Hackathon 2026)**
+
 ## The Problem
-- Code review is one of the most time-consuming parts of software development
-- Studies show developers spend 6-12 hours per week on code reviews
-- Most LLMs today produce low-quality, generic reviews ("Looks good!", "LGTM")
-- This wastes time, leads to alert fatigue, and misses real-world production bugs
+- Code review is one of the most time-consuming parts of software development, with developers typically spending 6-12 hours per week on PRs.
+- Most LLMs today produce low-quality, generic reviews ("Looks good!", "LGTM") that miss real-world production bugs.
+- This creates alert fatigue, wastes engineering time, and allows dangerous vulnerabilities to slip into production.
 
 ## Why This Environment is Unique
-- We built a **genuinely multi-step** RL environment (most environments are single-step text-in/text-out).
-- Agents must learn to explore evidence (`open_artifact`) before blindly submitting reviews (`submit_review`).
-- Features a meticulously crafted, deterministic grading system based on actual engineering root-cause analysis (no flaky LLM-as-a-judge required for the core rewards).
-- **Interactive Web Dashboard**: Unlike typical headless RL environments, we ship a fully integrated real-time frontend. Users can visually track agent episodes, observe diffs + artifacts dynamically, and see the reward breakdown instantly.
-- **Fully Compliant** with the OpenEnv Spec, featuring 3 distinct tasks (Easy, Medium, Hard).
+- We built a **genuinely multi-step** RL environment (unlike standard single-step text-in/text-out benchmarks).
+- Agents must learn to **explore evidence** (`open_artifact`) before blindly submitting reviews (`submit_review`).
+- Features a meticulously crafted, **deterministic grading system** based on actual engineering root-cause analysis. This removes "LLM-as-a-judge" flakiness from the core reward signal.
+- **Interactive Web Dashboard**: We ship a fully integrated real-time frontend. Users can visually track agent episodes, observe diffs, read artifacts dynamically, and understand the RL reward breakdown instantly.
+- **Fully Compliant** with the OpenEnv specification.
 
 ## Technical Novelty
-- **Task Hierarchy**: `easy-bug-hunt` (logic bugs), `medium-security-audit` (OWASP/Security flaws), `hard-async-race` (concurrency TOCTOU issues).
-- **Partial Progress Shaping**: Agents earn micro-rewards (+0.05) for investigating test logs, policy documents, and SQL models before submitting.
-- **Strict Pydantic Enforcement**: Output spaces are heavily guarded and typed, ensuring the RL agent learns to output actionable, structured formats rather than raw markdown.
-- **Dockerized & HF deployment-ready**: Zero reliance on massive dependencies (like torch) ensures sub-60-second build times.
+- **Grounded Task Hierarchy (Easy → Medium → Hard)**: 
+  - `pagination-regression`: Spotting dangerous Python negative-index slicing bugs.
+  - `tenant-export-auth`: Catching multi-tenant IDOR/cross-tenant data leaks and missing role constraints in a backend API.
+  - `refund-idempotency`: Diagnosing a concurrent refund worker TOCTOU race condition and missing idempotency keys.
+- **Partial Progress Shaping**: Agents earn micro-exploration rewards (+0.05) for actively investigating code files and logs before committing to a final review.
+- **Strict JSON Enforcement**: Action and observation spaces are heavily guarded by Pydantic, forcing agents to output actionable, structured vulnerability findings rather than raw markdown.
+- **Strictly Bounded Rewards**: The environment algorithmically constraints all scores within the `(0.01, 0.99)` range to meet strict platform validation specs. 
+- **Dockerized & Deployment-Ready**: Zero reliance on massive runtime dependencies (e.g., PyTorch) ensures fast build times and a robust Fast-API stateless backend.
 
 ## Real-World Impact
-- A model trained in this environment could autonomously triage PRs at enterprise scale.
-- Replaces generic AI feedback with targeted, line-specific, actionable interventions.
-- Flags multi-tenant authorization flaws and race conditions that static analysis tools universally miss.
+- A model trained in this environment could autonomously triage PRs at enterprise scale with high precision.
+- Moves AI away from generalized text analysis to targeted, line-specific, actionable engineering interventions.
+- Reliably detects hard-to-catch security flaws (like multi-tenant auth bypasses) and concurrency race conditions that static analysis tools universally miss.
 
 ## Future Extensions
-- Expanding to a continuous stream of dynamically generated vulnerabilities.
-- Integrating directly with GitHub Actions as a seamless bot.
-- Adding a "Fix Application" step where the agent pushes a commit based on its own review.
+- Expanding to a continuous stream of dynamically generated vulnerabilities to combat benchmark overfitting.
+- Integrating directly with CI/CD platforms (like GitHub Actions) as an automated AI reviewer bot.
+- Adding an execution feedback loop where the agent pushes a commit to patch its own discovered review findings and verify unit tests.
 
-## Compatibility
-Fully optimized for: `openenv-core`, `TRL` (GRPO), `Unsloth`, `SkyRL`, and Hugging Face infrastructure.
-
+## Compatibility Matrix
+Fully optimized and compliance-tested for: 
+- `openenv-core`
+- `TRL` (GRPO, PPO)
+- `Unsloth`
+- `SkyRL`
+- The Hugging Face Spaces ecosystem
